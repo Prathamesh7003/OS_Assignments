@@ -1,0 +1,4 @@
+total 36
+-----wx--- 1 prathamesh prathamesh     0 Apr  8 11:38 input.txt
+-rwxrwxr-x 1 prathamesh prathamesh 22704 Apr  8 10:33 shell
+-rw-rw-r-- 1 prathamesh prathamesh  8339 Apr  5 22:43 shell.c

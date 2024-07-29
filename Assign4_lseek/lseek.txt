@@ -1,0 +1,13 @@
+    Functionality:
+        Changing File Offset: The primary purpose of lseek() is to change the current file offset within a file opened by the process.
+        Seeking to Specific Positions: It allows seeking to a specific byte offset within the file, either relative to the beginning, current position, or end of the file.
+        Moving Relative to Current Position: The offset can be adjusted relative to the current position, which means moving forward or backward from the current offset.
+        Handling Special Offsets: Special offset values, such as SEEK_SET, SEEK_CUR, and SEEK_END, are used to specify the reference point for seeking within the file.
+
+    Benefits:
+        Random Access: lseek() enables random access to files by allowing processes to set the file offset to any desired position within the file.
+        Support for Large Files: It provides support for large files by allowing processes to access different parts of the file without reading or writing the entire file sequentially.
+        Efficiency: Random access to file data can improve the efficiency of file operations, especially for large files, by avoiding unnecessary reads or writes.
+        Position Tracking: lseek() allows processes to keep track of their current position within the file, which is useful for tasks such as reading or writing data at specific locations.
+
+Overall, the lseek() system call is essential for file manipulation operations in Unix-like systems, providing flexibility, efficiency, and support for various file access patterns, including sequential and random access.

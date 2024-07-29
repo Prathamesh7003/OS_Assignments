@@ -1,0 +1,35 @@
+    read100.c:
+        This C program should open a new file in the /tmp/ folder for writing.
+        It should write exactly 100 bytes of data to the file.
+        After writing, it should close the file and exit.
+
+    read510.c:
+        This C program should open an existing file for read-write.
+        It should then read bytes 5 to 10 from the file.
+        After reading, it should print out the read data to stdout and exit.
+
+    write10end.c:
+        This C program should open an existing file for read-write.
+        It should move the file pointer to the end of the file.
+        It should then write exactly 10 bytes of data to the end of the file.
+        After writing, it should close the file and exit.
+
+    copy.c:
+        This C program should take two arguments: the path of an existing file and the path of the file to be created as a copy.
+        It should open the existing file for reading and the new file for writing.
+        It should read data from the existing file and write it to the new file.
+        After copying, it should close both files and exit.
+
+    rename.c:
+        This C program should take two arguments: the path of an existing file and the new name/path for the file after renaming.
+        It should use the rename() system call to rename the file.
+        After renaming, it should exit.
+
+Now, for the shell script:
+
+    test_script.sh:
+        This shell script should execute each C program with appropriate arguments to perform the tests.
+        After executing each program, it should use commands like cat, echo, diff to verify the correctness of the operations performed by the C programs.
+        It should print appropriate messages indicating whether each test passed or failed.
+
+The purpose of these programs and the shell script is to test the behavior of the operating system's file-related system calls according to the specified requirements, ensuring that they perform as expected and conform to the prescribed behavior.

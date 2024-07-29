@@ -1,0 +1,31 @@
+diff -rc old_linux/syscall_64.tbl new_linux/syscall_64.tbl
+*** old_linux/syscall_64.tbl	2024-02-05 21:12:03.235747115 +0530
+--- new_linux/syscall_64.tbl	2024-02-05 21:07:36.393483995 +0530
+***************
+*** 363,369 ****
+  439	common	faccessat2		sys_faccessat2
+  440	common	process_madvise		sys_process_madvise
+  441	common	epoll_pwait2		sys_epoll_pwait2
+! 
+  #
+  # Due to a historical design error, certain syscalls are numbered differently
+  # in x32 as compared to native x86_64.  These syscalls have numbers 512-547.
+--- 363,369 ----
+  439	common	faccessat2		sys_faccessat2
+  440	common	process_madvise		sys_process_madvise
+  441	common	epoll_pwait2		sys_epoll_pwait2
+! 442	common	hello			sys_hello
+  #
+  # Due to a historical design error, certain syscalls are numbered differently
+  # in x32 as compared to native x86_64.  These syscalls have numbers 512-547.
+diff -rc old_linux/syscalls.h new_linux/syscalls.h
+*** old_linux/syscalls.h	2024-02-05 21:11:22.725630029 +0530
+--- new_linux/syscalls.h	2024-02-05 21:06:34.500698864 +0530
+***************
+*** 1364,1367 ****
+--- 1364,1368 ----
+  		int __user *optlen);
+  int __sys_setsockopt(int fd, int level, int optname, char __user *optval,
+  		int optlen);
++ asmlinkage long sys_hello(void);		
+  #endif

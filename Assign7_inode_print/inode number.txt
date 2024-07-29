@@ -1,0 +1,18 @@
+the program reads the superblock of ext2 filesystem and prints various info about superblock and many more
+then calculates the block size using superblocks
+and block group number and inode number within block group
+
+block group no = inode number-1 / no of inoded per group
+then to calculate index of inode within block group-- inode no -1 % inodes per group
+===============================================================================================================================================================
+bgno = ceil((inodeno - 1) / sb.s_inodes_per_group);
+finode = (inodeno - 1) % sb.s_inodes_per_group;
+===============================================================================================================================================================
+Explanation:
+
+inodeno: The inode number provided as a command-line argument.
+sb.s_inodes_per_group: The number of inodes per block group, obtained from the superblock structure (sb).
+(inodeno - 1) / sb.s_inodes_per_group: This expression calculates the block group number by dividing the given inode number by the number of inodes per group. The -1 is used because inode numbers start from 1, whereas array indices start from 0. ceil function is used to ensure that fractional values are rounded up to the nearest integer.
+(inodeno - 1) % sb.s_inodes_per_group: This expression calculates the index of the inode within the block group. It calculates the remainder after dividing the given inode number by the number of inodes per group.
+===============================================================================================================================================================
+Once the block group number and inode index within that group are determined, the program seeks to the appropriate location in the file to read the corresponding inode.

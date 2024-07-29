@@ -1,0 +1,113 @@
+diff --git a/file.c b/file.c
+index 24b32c2..5da7194 100644
+--- a/file.c
++++ b/file.c
+@@ -10,16 +10,76 @@
+ #include "sleeplock.h"
+ #include "file.h"
+ 
++#define SLOB_SIZE sizeof(struct file)
++#define N_SLOTS NFILE
++
++struct slob_slot {
++  struct slob_slot* next;
++};
++
++struct {
++  struct spinlock lock;
++  char slob_space[N_SLOTS * SLOB_SIZE];
++  struct slob_slot* free_list;
++} slob_allocator;
++
+ struct devsw devsw[NDEV];
+ struct {
+   struct spinlock lock;
+   struct file file[NFILE];
+ } ftable;
+ 
++
++void
++slob_init(void)
++{
++  initlock(&slob_allocator.lock, "slob_lock");
++
++  // Initialize the free list
++  slob_allocator.free_list = (struct slob_slot*)kalloc();
++  struct slob_slot* curr_slot = slob_allocator.free_list;
++  for (int i = 1; i < N_SLOTS; ++i) {
++    curr_slot->next = (struct slob_slot*)(((char*)curr_slot) + SLOB_SIZE);
++    curr_slot = curr_slot->next;
++  }
++  curr_slot->next = 0;
++}
++
++void*
++slob_alloc(void)
++{
++  acquire(&slob_allocator.lock);
++
++  if (slob_allocator.free_list == 0) {
++    release(&slob_allocator.lock);
++    return 0; // No free slots available
++  }
++
++  void* allocated_mem = (void*)slob_allocator.free_list;
++  slob_allocator.free_list = slob_allocator.free_list->next;
++
++  release(&slob_allocator.lock);
++
++  return allocated_mem;
++}
++
++void
++slob_free(void* addr)
++{
++  acquire(&slob_allocator.lock);
++
++  struct slob_slot* new_free_slot = (struct slob_slot*)addr;
++  new_free_slot->next = slob_allocator.free_list;
++  slob_allocator.free_list = new_free_slot;
++
++  release(&slob_allocator.lock);
++}
++
+ void
+ fileinit(void)
+ {
+   initlock(&ftable.lock, "ftable");
++  slob_init();
+ }
+ 
+ // Allocate a file structure.
+@@ -28,16 +88,21 @@ filealloc(void)
+ {
+   struct file *f;
+ 
+-  acquire(&ftable.lock);
+-  for(f = ftable.file; f < ftable.file + NFILE; f++){
+-    if(f->ref == 0){
+-      f->ref = 1;
+-      release(&ftable.lock);
+-      return f;
+-    }
+-  }
+-  release(&ftable.lock);
+-  return 0;
++  void* allocated_mem = slob_alloc();
++  if (allocated_mem == 0)
++    return 0; // Memory allocation failed
++
++  f = (struct file*)allocated_mem;
++  f->ref = 1;
++
++  return f;
++}
++
++// Free a file structure.
++void
++filefree(struct file *f)
++{
++  slob_free((void*)f);
+ }
+ 
+ // Increment ref count for file f.

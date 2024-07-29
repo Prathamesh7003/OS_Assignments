@@ -1,0 +1,165 @@
+diff --git a/Makefile b/Makefile
+index 09d790c..86ea6ae 100644
+--- a/Makefile
++++ b/Makefile
+@@ -181,6 +181,7 @@ UPROGS=\
+ 	_usertests\
+ 	_wc\
+ 	_zombie\
++	_newsyscall\
+ 
+ fs.img: mkfs README $(UPROGS)
+ 	./mkfs fs.img README $(UPROGS)
+@@ -250,7 +251,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
+ EXTRA=\
+ 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
+ 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
+-	printf.c umalloc.c\
++	printf.c umalloc.c newsyscall.c\
+ 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+ 	.gdbinit.tmpl gdbutil\
+ 
+diff --git a/defs.h b/defs.h
+index 82fb982..c09a399 100644
+--- a/defs.h
++++ b/defs.h
+@@ -120,6 +120,9 @@ void            userinit(void);
+ int             wait(void);
+ void            wakeup(void*);
+ void            yield(void);
++int             processdetails(void);
++void            updateTrapCount(void);
++void            updateKeyboardInterruptCount(void);
+ 
+ // swtch.S
+ void            swtch(struct context**, struct context*);
+diff --git a/proc.c b/proc.c
+index 806b1b1..f4ad87b 100644
+--- a/proc.c
++++ b/proc.c
+@@ -532,3 +532,39 @@ procdump(void)
+     cprintf("\n");
+   }
+ }
++int trapCount = 0 , keyboardInterruptCount = 0 ;
++
++int
++processdetails(){
++  sti();  
++  int runnableProcess = 0, sleepingProcess = 0, zombieProcess = 0;
++  acquire(&ptable.lock);
++  for(struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++){
++    if(p->state == SLEEPING)
++      sleepingProcess++;
++    else if(p->state == RUNNABLE)
++      runnableProcess++;
++    else if(p->state == ZOMBIE)
++      zombieProcess++;
++  }
++
++  cprintf("Number of processes forked so far: %d\n", nextpid);
++  cprintf("Current count of RUNNABLE processes: %d\n", runnableProcess);
++  cprintf("Current count of SLEEPING processes: %d\n", sleepingProcess);
++  cprintf("Current count of ZOMBIE processes: %d\n", zombieProcess);
++  cprintf("Total number of times scheduling was done for processes: %d\n", ticks);
++  cprintf("Number of interrupts so far: %d\n", trapCount);
++  cprintf("Number of keyboard interrupts so far: %d\n", keyboardInterruptCount);
++  
++  release(&ptable.lock);
++  return 0;
++}
++void 
++updateTrapCount()
++{
++  trapCount++;
++}
++
++void updateKeyboardInterruptCount(){
++  keyboardInterruptCount++;
++}
+diff --git a/syscall.c b/syscall.c
+index ee85261..d593caa 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -103,6 +103,7 @@ extern int sys_unlink(void);
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_processdetails(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +127,7 @@ static int (*syscalls[])(void) = {
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_processdetails]   sys_processdetails,
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index bc5f356..975f92a 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -20,3 +20,4 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define SYS_processdetails   22
+diff --git a/sysproc.c b/sysproc.c
+index 0686d29..6cff615 100644
+--- a/sysproc.c
++++ b/sysproc.c
+@@ -89,3 +89,8 @@ sys_uptime(void)
+   release(&tickslock);
+   return xticks;
+ }
++
++int
++sys_processdetails(void){
++  return processdetails();
++}
+\ No newline at end of file
+diff --git a/trap.c b/trap.c
+index 41c66eb..44dfa46 100644
+--- a/trap.c
++++ b/trap.c
+@@ -45,7 +45,7 @@ trap(struct trapframe *tf)
+       exit();
+     return;
+   }
+-
++  updateTrapCount();
+   switch(tf->trapno){
+   case T_IRQ0 + IRQ_TIMER:
+     if(cpuid() == 0){
+@@ -64,6 +64,7 @@ trap(struct trapframe *tf)
+     // Bochs generates spurious IDE1 interrupts.
+     break;
+   case T_IRQ0 + IRQ_KBD:
++    updateKeyboardInterruptCount();
+     kbdintr();
+     lapiceoi();
+     break;
+diff --git a/user.h b/user.h
+index 4f99c52..1bbefdc 100644
+--- a/user.h
++++ b/user.h
+@@ -23,6 +23,7 @@ int getpid(void);
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int processdetails(void);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff --git a/usys.S b/usys.S
+index 8bfd8a1..802e088 100644
+--- a/usys.S
++++ b/usys.S
+@@ -29,3 +29,4 @@ SYSCALL(getpid)
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(processdetails)
+\ No newline at end of file
